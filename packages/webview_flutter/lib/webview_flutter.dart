@@ -19,6 +19,17 @@ enum JavascriptMode {
   unrestricted,
 }
 
+enum MixedContentMode {
+  /// MixedContent insecure content may be allowed to be loaded by a secure origin and other types of content will be blocked.
+  compatible,
+
+  /// MixedContent allow a secure origin to load content from any other origin, even if that origin is insecure.
+  always,
+
+  /// MixedContent  will not allow a secure origin to load content from an insecure origin.
+  never,
+}
+
 /// A message that was sent by JavaScript code running in a [WebView].
 class JavascriptMessage {
   /// Constructs a JavaScript message object.
@@ -113,6 +124,7 @@ class WebView extends StatefulWidget {
     this.onWebViewCreated,
     this.initialUrl,
     this.javascriptMode = JavascriptMode.disabled,
+    this.mixedContentMode = MixedContentMode.never,
     this.javascriptChannels,
     this.navigationDelegate,
     this.gestureRecognizers,
@@ -140,6 +152,9 @@ class WebView extends StatefulWidget {
 
   /// Whether Javascript execution is enabled.
   final JavascriptMode javascriptMode;
+
+  /// Whether Mixed COntent is enabled.
+  final MixedContentMode mixedContentMode;
 
   /// The set of [JavascriptChannel]s available to JavaScript code running in the web view.
   ///
@@ -337,6 +352,7 @@ class _CreationParams {
 class _WebSettings {
   _WebSettings({
     this.javascriptMode,
+    this.mixedContentMode,
     this.hasNavigationDelegate,
     this.debuggingEnabled,
   });
@@ -344,18 +360,21 @@ class _WebSettings {
   static _WebSettings fromWidget(WebView widget) {
     return _WebSettings(
       javascriptMode: widget.javascriptMode,
+      mixedContentMode: widget.mixedContentMode,
       hasNavigationDelegate: widget.navigationDelegate != null,
       debuggingEnabled: widget.debuggingEnabled,
     );
   }
 
   final JavascriptMode javascriptMode;
+  final MixedContentMode mixedContentMode;
   final bool hasNavigationDelegate;
   final bool debuggingEnabled;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'jsMode': javascriptMode.index,
+      'contentMode': mixedContentMode.index,
       'hasNavigationDelegate': hasNavigationDelegate,
       'debuggingEnabled': debuggingEnabled,
     };
@@ -365,6 +384,9 @@ class _WebSettings {
     final Map<String, dynamic> updates = <String, dynamic>{};
     if (javascriptMode != newSettings.javascriptMode) {
       updates['jsMode'] = newSettings.javascriptMode.index;
+    }
+    if (mixedContentMode != newSettings.mixedContentMode) {
+      updates['contentMode'] = newSettings.mixedContentMode.index;
     }
     if (hasNavigationDelegate != newSettings.hasNavigationDelegate) {
       updates['hasNavigationDelegate'] = newSettings.hasNavigationDelegate;

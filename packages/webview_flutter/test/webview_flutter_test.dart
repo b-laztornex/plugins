@@ -67,6 +67,25 @@ void main() {
     expect(platformWebView.javascriptMode, JavascriptMode.disabled);
   });
 
+  testWidgets('Mixed content Mode', (WidgetTester tester) async {
+    await tester.pumpWidget(const WebView(
+      initialUrl: 'https://youtube.com',
+      mixedContentMode: MixedContentMode.always,
+    ));
+
+    final FakePlatformWebView platformWebView =
+        fakePlatformViewsController.lastCreatedView;
+
+    expect(platformWebView.mixedContentMode, MixedContentMode.always);
+
+    await tester.pumpWidget(const WebView(
+      initialUrl: 'https://youtube.com',
+      mixedContentMode: MixedContentMode.always,
+    ));
+
+    expect(platformWebView.mixedContentMode, MixedContentMode.always);
+  });
+
   testWidgets('Load url', (WidgetTester tester) async {
     WebViewController controller;
     await tester.pumpWidget(
@@ -763,6 +782,7 @@ class FakePlatformWebView {
           List<String>.from(params['javascriptChannelNames']);
     }
     javascriptMode = JavascriptMode.values[params['settings']['jsMode']];
+    mixedContentMode = MixedContentMode.values[params['settings']['contentMode']];
     hasNavigationDelegate =
         params['settings']['hasNavigationDelegate'] ?? false;
     debuggingEnabled = params['settings']['debuggingEnabled'];
@@ -781,6 +801,7 @@ class FakePlatformWebView {
 
   String get currentUrl => history.isEmpty ? null : history[currentPosition];
   JavascriptMode javascriptMode;
+  MixedContentMode mixedContentMode;
   List<String> javascriptChannelNames;
 
   bool hasNavigationDelegate;
@@ -795,6 +816,9 @@ class FakePlatformWebView {
       case 'updateSettings':
         if (call.arguments['jsMode'] != null) {
           javascriptMode = JavascriptMode.values[call.arguments['jsMode']];
+        }
+        if (call.arguments['contentMode'] != null) {
+          mixedContentMode = MixedContentMode.values[call.arguments['contentMode']];
         }
         if (call.arguments['hasNavigationDelegate'] != null) {
           hasNavigationDelegate = call.arguments['hasNavigationDelegate'];

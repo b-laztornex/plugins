@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.view.View;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
+import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
@@ -60,44 +61,44 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
   @Override
   public void onMethodCall(MethodCall methodCall, Result result) {
     switch (methodCall.method) {
-      case "loadUrl":
-        loadUrl(methodCall, result);
-        break;
-      case "updateSettings":
-        updateSettings(methodCall, result);
-        break;
-      case "canGoBack":
-        canGoBack(result);
-        break;
-      case "canGoForward":
-        canGoForward(result);
-        break;
-      case "goBack":
-        goBack(result);
-        break;
-      case "goForward":
-        goForward(result);
-        break;
-      case "reload":
-        reload(result);
-        break;
-      case "currentUrl":
-        currentUrl(result);
-        break;
-      case "evaluateJavascript":
-        evaluateJavaScript(methodCall, result);
-        break;
-      case "addJavascriptChannels":
-        addJavaScriptChannels(methodCall, result);
-        break;
-      case "removeJavascriptChannels":
-        removeJavaScriptChannels(methodCall, result);
-        break;
-      case "clearCache":
-        clearCache(result);
-        break;
-      default:
-        result.notImplemented();
+    case "loadUrl":
+      loadUrl(methodCall, result);
+      break;
+    case "updateSettings":
+      updateSettings(methodCall, result);
+      break;
+    case "canGoBack":
+      canGoBack(result);
+      break;
+    case "canGoForward":
+      canGoForward(result);
+      break;
+    case "goBack":
+      goBack(result);
+      break;
+    case "goForward":
+      goForward(result);
+      break;
+    case "reload":
+      reload(result);
+      break;
+    case "currentUrl":
+      currentUrl(result);
+      break;
+    case "evaluateJavascript":
+      evaluateJavaScript(methodCall, result);
+      break;
+    case "addJavascriptChannels":
+      addJavaScriptChannels(methodCall, result);
+      break;
+    case "removeJavascriptChannels":
+      removeJavaScriptChannels(methodCall, result);
+      break;
+    case "clearCache":
+      clearCache(result);
+      break;
+    default:
+      result.notImplemented();
     }
   }
 
@@ -156,14 +157,12 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
     if (jsString == null) {
       throw new UnsupportedOperationException("JavaScript string cannot be null");
     }
-    webView.evaluateJavascript(
-        jsString,
-        new android.webkit.ValueCallback<String>() {
-          @Override
-          public void onReceiveValue(String value) {
-            result.success(value);
-          }
-        });
+    webView.evaluateJavascript(jsString, new android.webkit.ValueCallback<String>() {
+      @Override
+      public void onReceiveValue(String value) {
+        result.success(value);
+      }
+    });
   }
 
   @SuppressWarnings("unchecked")
@@ -191,45 +190,63 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
   private void applySettings(Map<String, Object> settings) {
     for (String key : settings.keySet()) {
       switch (key) {
-        case "jsMode":
-          updateJsMode((Integer) settings.get(key));
-          break;
-        case "hasNavigationDelegate":
-          final boolean hasNavigationDelegate = (boolean) settings.get(key);
+      case "jsMode":
+        updateJsMode((Integer) settings.get(key));
+        break;
+      case "contentMode":
+        updateContentMode((Integer) settings.get(key));
+        break;
+      case "hasNavigationDelegate":
+        final boolean hasNavigationDelegate = (boolean) settings.get(key);
 
-          final WebViewClient webViewClient =
-              flutterWebViewClient.createWebViewClient(hasNavigationDelegate);
+        final WebViewClient webViewClient = flutterWebViewClient.createWebViewClient(hasNavigationDelegate);
 
-          webView.setWebViewClient(webViewClient);
-          break;
-        case "debuggingEnabled":
-          final boolean debuggingEnabled = (boolean) settings.get(key);
+        webView.setWebViewClient(webViewClient);
+        break;
+      case "debuggingEnabled":
+        final boolean debuggingEnabled = (boolean) settings.get(key);
 
-          webView.setWebContentsDebuggingEnabled(debuggingEnabled);
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown WebView setting: " + key);
+        webView.setWebContentsDebuggingEnabled(debuggingEnabled);
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown WebView setting: " + key);
       }
     }
   }
 
   private void updateJsMode(int mode) {
     switch (mode) {
-      case 0: // disabled
-        webView.getSettings().setJavaScriptEnabled(false);
-        break;
-      case 1: // unrestricted
-        webView.getSettings().setJavaScriptEnabled(true);
-        break;
-      default:
-        throw new IllegalArgumentException("Trying to set unknown JavaScript mode: " + mode);
+    case 0: // disabled
+      webView.getSettings().setJavaScriptEnabled(false);
+      break;
+    case 1: // unrestricted
+      webView.getSettings().setJavaScriptEnabled(true);
+      break;
+    default:
+      throw new IllegalArgumentException("Trying to set unknown JavaScript mode: " + mode);
+    }
+  }
+
+  private void updateContentMode(int mode) {
+    switch (mode) {
+    case 0: // compatible
+      webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+      break;
+    case 1: // always
+      webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+      break;
+    case 2: // never
+      webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+      break;
+    default:
+      throw new IllegalArgumentException("Trying to set unknown mixed content mode  mode: " + mode);
     }
   }
 
   private void registerJavaScriptChannelNames(List<String> channelNames) {
     for (String channelName : channelNames) {
-      webView.addJavascriptInterface(
-          new JavaScriptChannel(methodChannel, channelName, platformThreadHandler), channelName);
+      webView.addJavascriptInterface(new JavaScriptChannel(methodChannel, channelName, platformThreadHandler),
+          channelName);
     }
   }
 
